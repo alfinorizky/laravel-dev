@@ -2,8 +2,9 @@ node {
     checkout scm
 
     stage("Build") {
-        docker.image('my-php-composer:8.2').inside('-u root') {
+        docker.image('my-php-composer:8.4').inside('-u root') {
             sh 'php -v'
+            sh 'git config --global --add safe.directory /var/jenkins_home/jobs/laravel-dev/workspace'
             sh 'composer install'
         }
     }
