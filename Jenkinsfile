@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PROD_DIR = "/home/finoganteng/prod.kelasdevops.xyz"
+        PROD_DIR = "$WORKSPACE/deploy"
     }
 
     stages {
