@@ -8,21 +8,15 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Build') {
             steps {
                 script {
-                    docker.image('composer:2').inside('-u root') {
+                    docker.image('composer:2').inside('--entrypoint="" -u root') {
                         sh '''
                             php -v || true
                             composer --version
                             git config --global --add safe.directory "$WORKSPACE"
-                            composer install --no-interaction --prefer-dist --optimize-autoloader || true
+                            composer install --no-interaction --prefer-dist --optimize-autoloader
                         '''
                     }
                 }
@@ -38,7 +32,7 @@ pipeline {
         stage('Deploy Production') {
             steps {
                 script {
-                    docker.image('agung3wi/alpine-rsync:1.1').inside('-u root') {
+                    docker.image('agung3wi/alpine-rsync:1.1').inside('--add-host host.docker.internal:host-gateway -u root') {
                         sshagent(credentials: ['ssh-prod']) {
                             sh '''
                                 mkdir -p ~/.ssh
@@ -59,10 +53,10 @@ pipeline {
         stage('Laravel Setup Production') {
             steps {
                 script {
-                    docker.image('agung3wi/alpine-rsync:1.1').inside('-u root') {
+                    docker.image('agung3wi/alpine-rsync:1.1').inside('--add-host host.docker.internal:host-gateway -u root') {
                         sshagent(credentials: ['ssh-prod']) {
                             sh '''
-                                ssh $PROD_USER@$PROD_HOST "
+                                ssh -o StrictHostKeyChecking=no $PROD_USER@$PROD_HOST "
                                     cd $PROD_DIR &&
                                     if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env; fi
                                 "
