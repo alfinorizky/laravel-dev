@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PROD_HOST = "172.19.188.5"
+        PROD_HOST = "host.docker.internal"
         PROD_USER = "finoganteng"
         PROD_DIR  = "/home/finoganteng/prod.kelasdevops.xyz"
     }
