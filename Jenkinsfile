@@ -4,7 +4,7 @@ pipeline {
 environment {
     DEPLOY_PATH = '/var/www/laravel-dev'
     DEPLOY_USER = 'finoganteng'
-    PROD_HOST   = '172.19.188.5'    
+    PROD_HOST   = '172.17.0.1'   
 }
     stages {
 
