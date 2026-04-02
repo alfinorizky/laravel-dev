@@ -1,20 +1,15 @@
 pipeline {
     agent any
-
-environment {
-    DEPLOY_PATH = '/var/www/laravel-dev'
-    DEPLOY_USER = 'finoganteng'
-    PROD_HOST   = '172.17.0.1'   
-}
+    environment {
+        DEPLOY_PATH = '/home/finoganteng/laravel-docker/src'
+    }
     stages {
-
         stage('Checkout') {
             steps {
                 echo '📥 Mengambil kode dari repository...'
                 checkout scm
             }
         }
-
         stage('Install Dependencies') {
             steps {
                 echo '📦 Install composer dependencies...'
@@ -30,40 +25,31 @@ environment {
                 '''
             }
         }
-
         stage('Test') {
             steps {
                 echo '🧪 Menjalankan test...'
                 sh 'echo "Test passed!"'
             }
         }
-
-  stage('Deploy') {
+        stage('Deploy') {
             steps {
                 echo '🚀 Deploy ke server...'
-                sshagent(credentials: ['ssh-prod']) {
-                    sh '''
-                        mkdir -p ~/.ssh
-                        chmod 700 ~/.ssh
+                sh '''
+                    # Copy hasil build ke folder yang di-mount container
+                    cp -r $(pwd)/. /home/finoganteng/laravel-docker/src/
 
-                        ssh-keyscan -H 172.19.188.5 >> ~/.ssh/known_hosts 2>/dev/null
-                        chmod 600 ~/.ssh/known_hosts
-
-                        rsync -avz --delete \
-                          -e "ssh -o StrictHostKeyChecking=no -v" \
-                          --exclude='.env' \
-                          --exclude='storage/app' \
-                          --exclude='storage/logs' \
-                          --exclude='.git' \
-                          --exclude='node_modules' \
-                          ./ finoganteng@172.19.188.5:/var/www/laravel-dev/
-                    '''
-                }
+                    # Jalankan artisan commands di container
+                    docker exec laravel_app1 bash -c "
+                        cd /var/www/html &&
+                        php artisan migrate --force &&
+                        php artisan config:cache &&
+                        php artisan route:cache &&
+                        php artisan view:cache
+                    "
+                '''
             }
         }
-
     }
-
     post {
         success {
             echo '✅ Deploy berhasil!'
