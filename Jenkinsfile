@@ -1,12 +1,11 @@
 pipeline {
     agent any
 
-    environment {
-        DEPLOY_PATH = '/var/www/laravel-dev'
-        DEPLOY_USER = 'finoganteng'
-        PROD_HOST   = 'localhost'
-    }
-
+environment {
+    DEPLOY_PATH = '/var/www/laravel-dev'
+    DEPLOY_USER = 'finoganteng'
+    PROD_HOST   = '172.19.188.5'    
+}
     stages {
 
         stage('Checkout') {
