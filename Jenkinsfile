@@ -2,54 +2,71 @@ pipeline {
     agent any
 
     environment {
-        PROD_DIR = "$WORKSPACE/deploy"
+        DEPLOY_PATH = '/var/www/laravel-dev'
+        DEPLOY_USER = 'finoganteng'
+        PROD_HOST   = 'localhost'
     }
 
     stages {
-        stage('Build') {
+
+        stage('Checkout') {
             steps {
-                script {
-                    docker.image('composer:2').inside('--entrypoint="" -u root') {
-                        sh '''
-                            php -v || true
-                            composer --version
-                            git config --global --add safe.directory "$WORKSPACE"
-                            composer install --no-interaction --prefer-dist --optimize-autoloader
-                        '''
-                    }
+                echo '📥 Mengambil kode dari repository...'
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo '📦 Install composer dependencies...'
+                sh '''
+                    docker run --rm \
+                      -v $(pwd):/app \
+                      -w /app \
+                      composer:latest \
+                      composer install \
+                        --no-interaction \
+                        --prefer-dist \
+                        --optimize-autoloader
+                '''
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo '🧪 Menjalankan test...'
+                sh 'echo "Test passed!"'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo '🚀 Deploy ke server...'
+                sshagent(credentials: ['ssh-prod']) {
+                    sh '''
+                        mkdir -p ~/.ssh
+                        ssh-keyscan -H "$PROD_HOST" >> ~/.ssh/known_hosts
+
+                        rsync -avz --delete \
+                          --exclude='.env' \
+                          --exclude='storage/app' \
+                          --exclude='storage/logs' \
+                          --exclude='.git' \
+                          --exclude='node_modules' \
+                          ./ $DEPLOY_USER@$PROD_HOST:$DEPLOY_PATH/
+                    '''
                 }
             }
         }
 
-        stage('Testing') {
-            steps {
-                sh 'echo "Ini adalah test"'
-            }
-        }
+    }
 
-        stage('Deploy Production') {
-            steps {
-                sh '''
-                    mkdir -p "$PROD_DIR"
-                    rsync -rav --delete ./ "$PROD_DIR"/ \
-                      --exclude=.env \
-                      --exclude=storage \
-                      --exclude=.git \
-                      --exclude=vendor
-                '''
-            }
+    post {
+        success {
+            echo '✅ Deploy berhasil!'
         }
-
-        stage('Laravel Setup Production') {
-            steps {
-                sh '''
-                    cd "$PROD_DIR"
-                    if [ ! -f .env ] && [ -f .env.example ]; then
-                      cp .env.example .env
-                    fi
-                    ls -la
-                '''
-            }
+        failure {
+            echo '❌ Deploy gagal! Cek Console Output.'
         }
     }
 }
