@@ -14,7 +14,7 @@ pipeline {
             steps {
                 echo '📦 Install composer dependencies...'
                 sh '''
-                    docker run --rm \
+                    docker -H unix:///var/run/docker.sock run --rm \
                       -v $(pwd):/app \
                       -w /app \
                       composer:latest \
@@ -35,11 +35,9 @@ pipeline {
             steps {
                 echo '🚀 Deploy ke server...'
                 sh '''
-                    # Copy hasil build ke folder yang di-mount container
                     cp -r $(pwd)/. /home/finoganteng/laravel-docker/src/
 
-                    # Jalankan artisan commands di container
-                    docker exec laravel_app1 bash -c "
+                    docker -H unix:///var/run/docker.sock exec laravel_app1 bash -c "
                         cd /var/www/html &&
                         php artisan migrate --force &&
                         php artisan config:cache &&
