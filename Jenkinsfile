@@ -38,21 +38,25 @@ environment {
             }
         }
 
-        stage('Deploy') {
+  stage('Deploy') {
             steps {
                 echo '🚀 Deploy ke server...'
                 sshagent(credentials: ['ssh-prod']) {
                     sh '''
                         mkdir -p ~/.ssh
-                        ssh-keyscan -H "$PROD_HOST" >> ~/.ssh/known_hosts
+                        chmod 700 ~/.ssh
+
+                        ssh-keyscan -H 172.19.188.5 >> ~/.ssh/known_hosts 2>/dev/null
+                        chmod 600 ~/.ssh/known_hosts
 
                         rsync -avz --delete \
+                          -e "ssh -o StrictHostKeyChecking=no -v" \
                           --exclude='.env' \
                           --exclude='storage/app' \
                           --exclude='storage/logs' \
                           --exclude='.git' \
                           --exclude='node_modules' \
-                          ./ $DEPLOY_USER@$PROD_HOST:$DEPLOY_PATH/
+                          ./ finoganteng@172.19.188.5:/var/www/laravel-dev/
                     '''
                 }
             }
