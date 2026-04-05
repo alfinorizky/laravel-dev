@@ -10,35 +10,17 @@ pipeline {
                 checkout scm
             }
         }
-        stage('Install Dependencies') {
-            steps {
-                echo '📦 Install composer dependencies...'
-                sh '''
-                    docker -H unix:///var/run/docker.sock run --rm \
-                      -v $(pwd):/app \
-                      -w /app \
-                      composer:latest \
-                      composer install \
-                        --no-interaction \
-                        --prefer-dist \
-                        --optimize-autoloader
-                '''
-            }
-        }
-        stage('Test') {
-            steps {
-                echo '🧪 Menjalankan test...'
-                sh 'echo "Test passed!"'
-            }
-        }
         stage('Deploy') {
             steps {
                 echo '🚀 Deploy ke server...'
                 sh '''
+                    # Copy file ke folder mount laravel
                     cp -r $(pwd)/. /home/finoganteng/laravel-docker/src/
 
+                    # Install dependencies dan jalankan artisan di container
                     docker -H unix:///var/run/docker.sock exec laravel_app1 bash -c "
                         cd /var/www/html &&
+                        composer install --no-interaction --optimize-autoloader &&
                         php artisan migrate --force &&
                         php artisan config:cache &&
                         php artisan route:cache &&
