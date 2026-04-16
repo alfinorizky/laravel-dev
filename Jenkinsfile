@@ -14,6 +14,8 @@ pipeline {
             steps {
                 echo '🚀 Deploy ke server...'
                 sh '''
+                    chmod 666 /var/run/docker.sock
+
                     rsync -av --exclude='.git' $(pwd)/ /home/finoganteng/laravel-docker/src/
 
                     docker -H unix:///var/run/docker.sock exec laravel_app1 bash -c "
