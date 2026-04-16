@@ -13,9 +13,10 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo '🚀 Deploy ke server...'
-                    rsync -av --exclude='.git' $(pwd)/ /home/finoganteng/laravel-docker/src/
+                sh """
+                    rsync -av --exclude='.git' ./ ${DEPLOY_PATH}/
 
-                    docker -H unix:///var/run/docker.sock exec laravel_app1 bash -c "
+                    docker exec laravel_app1 bash -c "
                         cd /var/www/html &&
                         composer install --no-interaction --optimize-autoloader &&
                         php artisan migrate --force &&
@@ -23,7 +24,7 @@ pipeline {
                         php artisan route:cache &&
                         php artisan view:cache
                     "
-                '''
+                """
             }
         }
     }
